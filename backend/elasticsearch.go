@@ -17,8 +17,17 @@ type ElasticsearchBackend struct {
 	client *elastic.Client
 }
 
-func (backend ElasticsearchBackend) ReadFromES() { // the parenthesis before the function name is the receiver
+func (backend *ElasticsearchBackend) ReadFromES(query elastic.Query, index string) (*elastic.SearchResult, error) {
+    searchResult, err := backend.client.Search().
+        Index(index).
+        Query(query).
+        Pretty(true).
+        Do(context.Background())
+    if err != nil {
+        return nil, err
+    }
 
+    return searchResult, nil
 }
 
 func InitElasticsearchBackend() {
