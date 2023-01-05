@@ -17,7 +17,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
     if err := decoder.Decode(&app); err != nil {
         panic(err)
     }
-
+    service.SaveApp(&app)
     fmt.Fprintf(w, "Upload request received: %s\n", app.Description)
 }
 
@@ -41,4 +41,19 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
     w.Write(js)
+}
+
+func checkoutHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("Received one checkout request")
+    w.Header().Set("Content-Type", "text/plain")
+    appID := r.FormValue("appID")
+    s, err := service.CheckoutApp(r.Header.Get("Origin"), appID)
+    if err != nil {
+        fmt.Println("Checkout failed")
+        w.Write([]byte(err.Error()))
+        return
+    }
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte(s.URL))
+    fmt.Println("Checkout process started!")
 }

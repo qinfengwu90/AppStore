@@ -4,9 +4,11 @@ import (
 	"appstore/backend"
 	"appstore/constants"
 	"appstore/model"
+	"fmt"
 	"reflect"
-
+	"errors"
 	"github.com/olivere/elastic/v7"
+	"github.com/stripe/stripe-go/v74"
 )
 
 func SearchApps(title string, description string) ([]model.App, error) {
@@ -77,3 +79,24 @@ func getAppFromSearchResult(searchResult *elastic.SearchResult) []model.App {
 	}
 	return apps
 }
+
+func SaveApp(app *model.App) error {
+	productID, priceID, err := backend.CreateProductWithPrice(app.Title, app.Description, int64(app.Price*100))
+	if err != nil {
+		fmt.Printf("Failed to create Product and Price using Stripe SDK %v\n", err)
+		return err
+	}
+	fmt.Printf("Product %s with price %s is successfully created", productID, priceID)
+	return nil
+ }
+
+ func CheckoutApp(domain, appID string) (*stripe.CheckoutSession, error) {
+	app, err := SearchAppsByID(appID)
+	if err != nil {
+		return nil, err
+	} 
+	if app == nil {
+		return nil, errors.New("Unable to find the app in Elasticsearch")
+	}
+	return backend.CreateCheckoutSession(domain, app.PriceID)
+ }
